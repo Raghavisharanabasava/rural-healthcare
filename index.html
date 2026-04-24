@@ -97,15 +97,32 @@
             font-size: 14px;
         }
 
-        .token {
+        .token-area {
             background: #111;
             color: #4ade80;
             padding: 15px;
             border-radius: 15px;
             text-align: center;
             margin-top: 10px;
+        }
+
+        .token-num {
             font-family: monospace;
-            font-size: 24px;
+            font-size: 28px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .hospital-link {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -136,7 +153,14 @@
                 <p><b>🚫 AVOID (ಬೇಡ):</b><br><span id="resN"></span></p>
                 <p><b>⚠️ CARE (ಕ್ರಮಗಳು):</b><br><span id="resD"></span></p>
             </div>
-            <div class="token" id="resTok"></div>
+
+            <div class="token-area">
+                <span style="color: #999; font-size: 12px;">OPD TOKEN / ಚೀಟಿ ಸಂಖ್ಯೆ</span>
+                <div class="token-num" id="resTok"></div>
+                <a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" class="hospital-link">
+                    📍 FIND HOSPITAL (ಆಸ್ಪತ್ರೆ ಹುಡುಕಿ)
+                </a>
+            </div>
         </div>
     </div>
 
@@ -161,7 +185,6 @@
             const txt = document.getElementById('inp').value.toLowerCase();
             if (!txt) return;
 
-            // MULTI-SYMPTOM DETECTION
             let sym = "gen";
             if (txt.match(/cough|breath|ಕೆಮ್ಮು|ಉಸಿರಾಟ|cold|ಶೀತ/)) sym = "resp";
             else if (txt.match(/stomach|vomit|loose|ಹೊಟ್ಟೆ|ವಾಂತಿ|ಭೇದಿ/)) sym = "gast";
@@ -193,7 +216,9 @@
             document.getElementById('resE').innerText = plan.e;
             document.getElementById('resN').innerText = plan.n;
             document.getElementById('resD').innerText = plan.d;
-            document.getElementById('resTok').innerText = "TICKET: " + Math.floor(Math.random() * 9000 + 1000);
+
+            // Ticket logic: Formatted as OPD-XXXX
+            document.getElementById('resTok').innerText = "OPD-" + Math.floor(Math.random() * 9000 + 1000);
 
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(plan.a);
