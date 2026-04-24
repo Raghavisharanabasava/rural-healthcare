@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="kn">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sahaya AI - Rural Health</title>
+    <style>
+        :root {
+            --primary: #064e3b;
+            --urgent: #dc2626;
+            --stable: #059669;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: #f3f4f6;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .age-select {
+            display: flex;
+            gap: 5px;
+            margin: 15px 0;
+        }
+
+        .age-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            background: white;
+        }
+
+        .active {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .mic {
+            width: 100%;
+            padding: 20px;
+            background: #ecfdf5;
+            border: 2px dashed #059669;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-run {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .res-box {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .banner {
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        .token {
+            background: #111;
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2 style="text-align:center; color:var(--primary); margin:0;">Sahaya AI (ಸಹಾಯ)</h2>
+
+        <div class="age-select">
+            <button id="b-child" class="age-btn" onclick="setA('child')">CHILD (ಮಗು)</button>
+            <button id="b-adult" class="age-btn active" onclick="setA('adult')">ADULT (ವಯಸ್ಕ)</button>
+            <button id="b-older" class="age-btn" onclick="setA('older')">SENIOR (ಹಿರಿಯರು)</button>
+        </div>
+
+        <div class="mic" onclick="startV()">🎤 Tap to Speak (ಮಾತನಾಡಿ)</div>
+        <textarea id="inp"
+            style="width:100%; height:60px; border-radius:10px; border:1px solid #ddd; padding:10px; box-sizing:border-box;"
+            placeholder="Type or speak symptoms..."></textarea>
+
+        <button class="btn-run" onclick="analyze()">ANALYZE (ವಿಶ್ಲೇಷಿಸಿ)</button>
+
+        <div id="resBox" class="res-box">
+            <div id="lev" class="banner"></div>
+            <div class="info">
+                <h3 id="resT" style="margin-top:0; color:var(--primary);"></h3>
+                <p><b>🍲 EAT (ಸೇವಿಸಿ):</b><br><span id="resE"></span></p>
+                <p><b>🚫 AVOID (ಬೇಡ):</b><br><span id="resN"></span></p>
+                <p><b>⚠️ CARE (ಕ್ರಮಗಳು):</b><br><span id="resD"></span></p>
+            </div>
+            <div class="token" id="resTok"></div>
+        </div>
+    </div>
+
+    <script>
+        let age = 'adult';
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+        function setA(v) {
+            age = v;
+            document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('b-' + v).classList.add('active');
+        }
+
+        function startV() {
+            rec.lang = 'kn-IN';
+            rec.start();
+        }
+
+        rec.onresult = (e) => { document.getElementById('inp').value = e.results[0][0].transcript; analyze(); };
+
+        function analyze() {
+            const txt = document.getElementById('inp').value.toLowerCase();
+            if (!txt) return;
+
+            // MULTI-SYMPTOM DETECTION
+            let sym = "gen";
+            if (txt.match(/cough|breath|ಕೆಮ್ಮು|ಉಸಿರಾಟ|cold|ಶೀತ/)) sym = "resp";
+            else if (txt.match(/stomach|vomit|loose|ಹೊಟ್ಟೆ|ವಾಂತಿ|ಭೇದಿ/)) sym = "gast";
+            else if (txt.match(/head|dizzy|faint|ತಲೆ|ಸುತ್ತು|ನಿಶಕ್ತಿ/)) sym = "neuro";
+
+            const DATA = {
+                "child": {
+                    "resp": { t: "ಮಕ್ಕಳ ಉಸಿರಾಟದ ಆರೈಕೆ", e: "ಬಿಸಿ ಗಂಜಿ ಮತ್ತು ಬಿಸಿ ನೀರು ನೀಡಿ.", n: "ತಂಪು ಪಾನೀಯ, ಐಸ್ ಕ್ರೀಮ್ ಮತ್ತು ಎಣ್ಣೆ ಪದಾರ್ಥ ಬೇಡ.", d: "ಉಸಿರಾಟ ವೇಗವಾಗಿದ್ದರೆ ತಕ್ಷಣ ಆಸ್ಪತ್ರೆಗೆ ಹೋಗಿ.", a: "ಮಗುವಿನ ಉಸಿರಾಟ ಗಮನಿಸಿ. ಬಿಸಿ ಬೇಳೆ ಗಂಜಿ ನೀಡಿ.", s: "URGENT" },
+                    "gast": { t: "ಮಕ್ಕಳ ಜೀರ್ಣಕ್ರಿಯೆ", e: "ಓ.ಆರ್.ಎಸ್ (ORS) ಮತ್ತು ಬಾಳೆಹಣ್ಣು ನೀಡಿ.", n: "ಖಾರ ಮತ್ತು ಮಸಾಲೆಯುಕ್ತ ಆಹಾರ ಬೇಡ.", d: "ಮಗು ಸರಿಯಾಗಿ ಮೂತ್ರ ಮಾಡುತ್ತಿದೆಯೇ ಗಮನಿಸಿ.", a: "ಮಗುವಿಗೆ ಆಗಾಗ ಓಆರ್ಎಸ್ ನೀಡಿ.", s: "HIGH" },
+                    "gen": { t: "ಮಕ್ಕಳ ಸಾಮಾನ್ಯ ಚಿಕಿತ್ಸೆ", e: "ಹಬೆಯಲ್ಲಿ ಬೇಯಿಸಿದ ಮೃದು ಆಹಾರ ನೀಡಿ.", n: "ಹೊರಗಿನ ಜಂಕ್ ಫುಡ್ ಬೇಡ.", d: "ಮಗುವಿಗೆ ಚೆನ್ನಾಗಿ ವಿಶ್ರಾಂತಿ ನೀಡಿ.", a: "ಮಗುವಿಗೆ ವಿಶ್ರಾಂತಿ ನೀಡಿ.", s: "STABLE" }
+                },
+                "older": {
+                    "neuro": { t: "ಹಿರಿಯರ ನರರೋಗ ತಪಾಸಣೆ", e: "ಎಳನೀರು ಮತ್ತು ಮೃದುವಾದ ಇಡ್ಲಿ ನೀಡಿ.", n: "ಹೆಚ್ಚು ಉಪ್ಪು ಮತ್ತು ಕಾಫಿ ಬೇಡ.", d: "ಒಬ್ಬರೇ ನಡೆಯಲು ಬಿಡಬೇಡಿ. ಬಿಪಿ ಪರೀಕ್ಷಿಸಿ.", a: "ಹಿರಿಯರೇ, ತಲೆಸುತ್ತು ಬಂದರೆ ಕೂಡಲೇ ಕುಳಿತುಕೊಳ್ಳಿ.", s: "URGENT" },
+                    "gen": { t: "ಹಿರಿಯರ ಆರೋಗ್ಯ", e: "ರಾಗಿ ಗಂಜಿ ಮತ್ತು ಮೊಸರು ಅನ್ನ ನೀಡಿ.", n: "ಖಾರ ಮತ್ತು ಉಪ್ಪಿನಕಾಯಿ ಬೇಡ.", d: "ರಕ್ತದೊತ್ತಡ (BP) ಗಮನಿಸಿ.", a: "ಹಿರಿಯರೇ, ಮೃದುವಾದ ಆಹಾರ ಸೇವಿಸಿ.", s: "HIGH" }
+                },
+                "adult": {
+                    "gen": { t: "ವಯಸ್ಕರ ಸಾಮಾನ್ಯ ಚಿಕಿತ್ಸೆ", e: "ತರಕಾರಿ ಸೂಪ್ ಮತ್ತು ಬಿಸಿ ನೀರು ಕುಡಿಯಿರಿ.", n: "ಎಣ್ಣೆ ಪದಾರ್ಥ ಮತ್ತು ಸೋಡಾ ಬೇಡ.", d: "24 ಗಂಟೆಗಳ ಕಾಲ ವಿಶ್ರಾಂತಿ ಪಡೆಯಿರಿ.", a: "ಚೆನ್ನಾಗಿ ವಿಶ್ರಾಂತಿ ಪಡೆಯಿರಿ.", s: "STABLE" }
+                }
+            };
+
+            const plan = (DATA[age] && DATA[age][sym]) ? DATA[age][sym] : (DATA[age] ? DATA[age]["gen"] : DATA["adult"]["gen"]);
+
+            document.getElementById('resBox').style.display = 'block';
+            const lev = document.getElementById('lev');
+            lev.innerText = plan.s + " PRIORITY";
+            lev.style.background = plan.s === 'URGENT' ? '#dc2626' : (plan.s === 'HIGH' ? '#ea580c' : '#059669');
+
+            document.getElementById('resT').innerText = plan.t;
+            document.getElementById('resE').innerText = plan.e;
+            document.getElementById('resN').innerText = plan.n;
+            document.getElementById('resD').innerText = plan.d;
+            document.getElementById('resTok').innerText = "TICKET: " + Math.floor(Math.random() * 9000 + 1000);
+
+            window.speechSynthesis.cancel();
+            const m = new SpeechSynthesisUtterance(plan.a);
+            m.lang = 'kn-IN';
+            window.speechSynthesis.speak(m);
+        }
+    </script>
+</body>
+
+</html>
